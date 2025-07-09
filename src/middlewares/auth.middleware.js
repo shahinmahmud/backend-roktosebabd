@@ -2,12 +2,17 @@ import jwt from "jsonwebtoken";
 import { User } from "../models/user.model.js";
 import { ApiError } from "../utils/ApiError.js";
 
-const verifyJWT = async (req, _, next) => {
+const verifyJWT = async (req, res, next) => {
     try {
         // find out access token from req
         const accessToken =
             req.cookies?.accessToken ||
             req.header("Authorization")?.replace("Bearer ", "");
+
+        if (!accessToken) {
+            // No token provided, call next with error (do not throw)
+            return next(new ApiError(401, "Access token required"));
+        }
 
         // validate access token
         const decodedToken = await jwt.verify(
@@ -18,13 +23,14 @@ const verifyJWT = async (req, _, next) => {
         const user = await User.findById(decodedToken._id);
 
         if (!user) {
-            throw new ApiError(401, "Invalid Access Token");
+            return next(new ApiError(401, "Invalid Access Token"));
         }
 
         req.user = user;
         next();
     } catch (error) {
-        throw new ApiError(401, error?.message || "Invalid access token");
+        // Always call next with error, never throw
+        next(new ApiError(401, error?.message || "Invalid access token"));
     }
 };
 
