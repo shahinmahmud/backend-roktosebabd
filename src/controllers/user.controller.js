@@ -4,6 +4,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import {
     uploadOnCloudinary,
+    uploadBufferOnCloudinary,
     deleteFromCloudinary,
     getPublicIdFromUrl,
 } from "../utils/cloudinary.js";
@@ -62,10 +63,21 @@ const registerUser = asyncHandler(async (req, res) => {
     }
 
     let profilePhoto = "";
-    const profilePhotoLocalPath = req.file?.path;
-
-    if (profilePhotoLocalPath) {
-        profilePhoto = await uploadOnCloudinary(profilePhotoLocalPath, "user");
+    if (
+        req.file &&
+        req.file.buffer &&
+        req.file.mimetype &&
+        req.file.originalname
+    ) {
+        const cloudinaryRes = await uploadBufferOnCloudinary(
+            req.file.buffer,
+            req.file.mimetype,
+            req.file.originalname,
+            "user"
+        );
+        if (cloudinaryRes) {
+            profilePhoto = cloudinaryRes.url;
+        }
     }
 
     const createUserPayload = {
@@ -303,16 +315,22 @@ const updateAdminProfile = asyncHandler(async (req, res) => {
     updateData.updatedAt = new Date();
 
     // Handle profile photo upload
-    const profilePhotoLocalPath = req.file?.path;
-    if (profilePhotoLocalPath) {
+    if (
+        req.file &&
+        req.file.buffer &&
+        req.file.mimetype &&
+        req.file.originalname
+    ) {
         // Get existing admin to check for old profile photo
         const existingAdmin = await User.findById(req.user._id).select(
             "profilePhoto"
         );
         const oldImageUrl = existingAdmin?.profilePhoto;
 
-        const profilePhoto = await uploadOnCloudinary(
-            profilePhotoLocalPath,
+        const profilePhoto = await uploadBufferOnCloudinary(
+            req.file.buffer,
+            req.file.mimetype,
+            req.file.originalname,
             "users/avatars",
             oldImageUrl
         );

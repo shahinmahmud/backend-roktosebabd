@@ -108,7 +108,7 @@ const compressImageIfNeeded = async (filePath) => {
         sharpInstance = null;
 
         // Add a small delay to ensure file handles are released (Windows fix)
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 100));
 
         // Check if compression was successful and reduced file size
         const compressedStats = fs.statSync(compressedPath);
@@ -119,7 +119,10 @@ const compressImageIfNeeded = async (filePath) => {
             try {
                 fs.unlinkSync(filePath);
             } catch (unlinkError) {
-                console.warn("Warning: Could not delete original file:", unlinkError.message);
+                console.warn(
+                    "Warning: Could not delete original file:",
+                    unlinkError.message
+                );
                 // Continue anyway, compressed file is available
             }
             return compressedPath;
@@ -128,13 +131,59 @@ const compressImageIfNeeded = async (filePath) => {
             try {
                 fs.unlinkSync(compressedPath);
             } catch (unlinkError) {
-                console.warn("Warning: Could not delete compressed file:", unlinkError.message);
+                console.warn(
+                    "Warning: Could not delete compressed file:",
+                    unlinkError.message
+                );
             }
             return filePath;
         }
     } catch (error) {
         console.error("Error compressing image:", error);
         return filePath; // Return original path if compression fails
+    }
+};
+
+/**
+ * Compress image buffer if it's larger than 100KB
+ * @param {Buffer} buffer - Image buffer
+ * @param {string} mimetype - Image mimetype (e.g., 'image/jpeg')
+ * @returns {Promise<Buffer>} - Compressed image buffer
+ */
+const compressImageBufferIfNeeded = async (buffer, mimetype) => {
+    try {
+        const fileSizeInKB = buffer.length / 1024;
+        if (fileSizeInKB <= 100) {
+            return buffer;
+        }
+        let sharpInstance = sharp(buffer);
+        let compressedBuffer;
+        if (mimetype === "image/jpeg" || mimetype === "image/jpg") {
+            compressedBuffer = await sharpInstance
+                .jpeg({ quality: 80, progressive: true, mozjpeg: true })
+                .toBuffer();
+        } else if (mimetype === "image/png") {
+            compressedBuffer = await sharpInstance
+                .png({ quality: 80, compressionLevel: 8, progressive: true })
+                .toBuffer();
+        } else if (mimetype === "image/webp") {
+            compressedBuffer = await sharpInstance
+                .webp({ quality: 80, effort: 6 })
+                .toBuffer();
+        } else {
+            compressedBuffer = await sharpInstance
+                .jpeg({ quality: 80 })
+                .toBuffer();
+        }
+        // If compression didn't help, return original
+        if (compressedBuffer.length < buffer.length) {
+            return compressedBuffer;
+        } else {
+            return buffer;
+        }
+    } catch (error) {
+        console.error("Error compressing image buffer:", error);
+        return buffer;
     }
 };
 
@@ -178,7 +227,10 @@ const uploadOnCloudinary = async (
         try {
             fs.unlinkSync(finalFilePath);
         } catch (cleanupError) {
-            console.warn("Warning: Could not delete uploaded file:", cleanupError.message);
+            console.warn(
+                "Warning: Could not delete uploaded file:",
+                cleanupError.message
+            );
             // Continue anyway, upload was successful
         }
 
@@ -192,12 +244,71 @@ const uploadOnCloudinary = async (
         try {
             if (fs.existsSync(localFilePath)) {
                 // Add delay before cleanup for Windows file locking
-                await new Promise(resolve => setTimeout(resolve, 100));
+                await new Promise((resolve) => setTimeout(resolve, 100));
                 fs.unlinkSync(localFilePath);
             }
         } catch (cleanupError) {
-            console.warn("Warning: Could not clean up local file:", cleanupError.message);
+            console.warn(
+                "Warning: Could not clean up local file:",
+                cleanupError.message
+            );
         }
+        return null;
+    }
+};
+
+/**
+ * Upload image buffer to Cloudinary with folder organization, auto-delete, and compression
+ * @param {Buffer} buffer - Image buffer
+ * @param {string} mimetype - Image mimetype (e.g., 'image/jpeg')
+ * @param {string} filename - Original filename (for Cloudinary naming)
+ * @param {string} folder - Folder name (donor, user, admin, moderator, etc.)
+ * @param {string} oldImageUrl - URL of the old image to delete (optional)
+ * @returns {Promise<Object|null>} - Cloudinary response or null
+ */
+const uploadBufferOnCloudinary = async (
+    buffer,
+    mimetype,
+    filename,
+    folder = "general",
+    oldImageUrl = null
+) => {
+    try {
+        if (!buffer) return null;
+        // Delete old image if provided
+        if (oldImageUrl) {
+            const oldPublicId = getPublicIdFromUrl(oldImageUrl);
+            if (oldPublicId) {
+                await deleteFromCloudinary(oldPublicId);
+            }
+        }
+        // Compress image if needed
+        const finalBuffer = await compressImageBufferIfNeeded(buffer, mimetype);
+        // Upload buffer to Cloudinary
+        const uploadResult = await new Promise((resolve, reject) => {
+            const uploadStream = cloudinary.uploader.upload_stream(
+                {
+                    resource_type: "auto",
+                    folder: folder,
+                    use_filename: true,
+                    unique_filename: true,
+                    quality: "auto:good",
+                    fetch_format: "auto",
+                    filename_override: filename,
+                },
+                (error, result) => {
+                    if (error) return reject(error);
+                    resolve(result);
+                }
+            );
+            uploadStream.end(finalBuffer);
+        });
+        console.log(
+            `File uploaded successfully to Cloudinary folder: ${folder}`
+        );
+        return uploadResult;
+    } catch (error) {
+        console.error("Error uploading buffer to Cloudinary:", error);
         return null;
     }
 };
@@ -217,4 +328,6 @@ export {
     deleteFromCloudinary,
     getPublicIdFromUrl,
     compressImageIfNeeded,
+    compressImageBufferIfNeeded,
+    uploadBufferOnCloudinary,
 };
