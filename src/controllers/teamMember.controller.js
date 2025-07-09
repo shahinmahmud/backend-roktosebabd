@@ -4,6 +4,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { TeamMember } from "../models/teamMember.model.js";
 import {
     uploadOnCloudinary,
+    uploadBufferOnCloudinary,
     deleteFromCloudinary,
     getPublicIdFromUrl,
 } from "../utils/cloudinary.js";
@@ -93,11 +94,16 @@ const createTeamMember = asyncHandler(async (req, res) => {
     }
 
     let imageUrl = "";
-
-    // Handle image upload
-    if (req.file) {
-        const cloudinaryResponse = await uploadOnCloudinary(
-            req.file.path,
+    if (
+        req.file &&
+        req.file.buffer &&
+        req.file.mimetype &&
+        req.file.originalname
+    ) {
+        const cloudinaryResponse = await uploadBufferOnCloudinary(
+            req.file.buffer,
+            req.file.mimetype,
+            req.file.originalname,
             "team-members"
         );
         if (cloudinaryResponse) {
@@ -145,11 +151,18 @@ const updateTeamMember = asyncHandler(async (req, res) => {
     let imageUrl = teamMember.image;
 
     // Handle new image upload
-    if (req.file) {
+    if (
+        req.file &&
+        req.file.buffer &&
+        req.file.mimetype &&
+        req.file.originalname
+    ) {
         const oldImageUrl = teamMember.image;
 
-        const cloudinaryResponse = await uploadOnCloudinary(
-            req.file.path,
+        const cloudinaryResponse = await uploadBufferOnCloudinary(
+            req.file.buffer,
+            req.file.mimetype,
+            req.file.originalname,
             "team-members",
             oldImageUrl
         );

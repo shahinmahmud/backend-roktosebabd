@@ -4,6 +4,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import {
     uploadOnCloudinary,
+    uploadBufferOnCloudinary,
     deleteFromCloudinary,
     getPublicIdFromUrl,
 } from "../utils/cloudinary.js";
@@ -87,11 +88,16 @@ const registerDonor = asyncHandler(async (req, res) => {
 
     // Handle profile photo upload
     let profilePhotoUrl = "";
-    const profilePhotoLocalPath = req.file?.path;
-
-    if (profilePhotoLocalPath) {
-        const profilePhoto = await uploadOnCloudinary(
-            profilePhotoLocalPath,
+    if (
+        req.file &&
+        req.file.buffer &&
+        req.file.mimetype &&
+        req.file.originalname
+    ) {
+        const profilePhoto = await uploadBufferOnCloudinary(
+            req.file.buffer,
+            req.file.mimetype,
+            req.file.originalname,
             "donor"
         );
         if (profilePhoto) {
@@ -363,16 +369,22 @@ const updateDonorProfile = asyncHandler(async (req, res) => {
     if (privacySettings) updateData.privacySettings = privacySettings;
 
     // Handle profile photo upload
-    const profilePhotoLocalPath = req.file?.path;
-    if (profilePhotoLocalPath) {
+    if (
+        req.file &&
+        req.file.buffer &&
+        req.file.mimetype &&
+        req.file.originalname
+    ) {
         // Get existing donor to check for old profile photo
         const existingDonor = await Donor.findById(req.donor._id).select(
             "profilePhoto"
         );
         const oldImageUrl = existingDonor?.profilePhoto;
 
-        const profilePhoto = await uploadOnCloudinary(
-            profilePhotoLocalPath,
+        const profilePhoto = await uploadBufferOnCloudinary(
+            req.file.buffer,
+            req.file.mimetype,
+            req.file.originalname,
             "donor",
             oldImageUrl
         );
@@ -480,11 +492,16 @@ const addDonor = asyncHandler(async (req, res) => {
     }
 
     let profilePhoto = "";
-    const profilePhotoLocalPath = req.file?.path;
-
-    if (profilePhotoLocalPath) {
-        const uploadResult = await uploadOnCloudinary(
-            profilePhotoLocalPath,
+    if (
+        req.file &&
+        req.file.buffer &&
+        req.file.mimetype &&
+        req.file.originalname
+    ) {
+        const uploadResult = await uploadBufferOnCloudinary(
+            req.file.buffer,
+            req.file.mimetype,
+            req.file.originalname,
             "donor"
         );
         profilePhoto = uploadResult?.url || "";
