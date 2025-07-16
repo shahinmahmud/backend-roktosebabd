@@ -70,19 +70,39 @@ const registerDonor = asyncHandler(async (req, res) => {
         throw new ApiError(400, "All required fields must be provided");
     }
 
-    // Check if donor already exists
-    const existedDonor = await Donor.findOne({
-        $or: [
-            { phone },
-            { email: email?.trim() || null },
-            { nationalId: nationalId?.trim() || null },
-        ].filter((condition) => Object.values(condition)[0]),
-    });
+    // // Check if donor already exists
+    // const existedDonor = await Donor.findOne({
+    //     $or: [
+    //         { phone },
+    //         { email: email?.trim() || null },
+    //         { nationalId: nationalId?.trim() || null },
+    //     ].filter((condition) => Object.values(condition)[0]),
+    // });
 
-    if (existedDonor) {
+    // if (existedDonor) {
+    //     throw new ApiError(
+    //         409,
+    //         "Donor with this phone, email or national ID already exists"
+    //     );
+    // }
+
+    // Check if donor already exists for each field and send specific error
+    if (phone && (await Donor.findOne({ phone: phone.trim() }))) {
+        throw new ApiError(409, "এই ফোন নম্বরটি ইতোমধ্যে ব্যবহৃত হয়েছে");
+    }
+    if (
+        email?.trim() &&
+        (await Donor.findOne({ email: email.trim().toLowerCase() }))
+    ) {
+        throw new ApiError(409, "এই ইমেইলটি ইতোমধ্যে ব্যবহৃত হয়েছে");
+    }
+    if (
+        nationalId?.trim() &&
+        (await Donor.findOne({ nationalId: nationalId.trim() }))
+    ) {
         throw new ApiError(
             409,
-            "Donor with this phone, email or national ID already exists"
+            "এই জাতীয় পরিচয়পত্র নম্বরটি ইতোমধ্যে ব্যবহৃত হয়েছে"
         );
     }
 
@@ -343,6 +363,7 @@ const getCurrentDonor = asyncHandler(async (req, res) => {
 const updateDonorProfile = asyncHandler(async (req, res) => {
     const {
         name,
+        phone,
         email,
         city,
         location,
@@ -350,14 +371,19 @@ const updateDonorProfile = asyncHandler(async (req, res) => {
         profession,
         weight,
         height,
+        bloodGroup,
+        gender,
+        religion,
+        dateOfBirth,
         emergencyContact,
         privacySettings,
     } = req.body;
 
     const updateData = {};
 
-    // Only allow donors to update certain fields
+    // Allow donors to update all fields
     if (name?.trim()) updateData.name = name.trim();
+    if (phone?.trim()) updateData.phone = phone.trim();
     if (email?.trim()) updateData.email = email.trim().toLowerCase();
     if (city?.trim()) updateData.city = city.trim();
     if (location?.trim()) updateData.location = location.trim();
@@ -365,6 +391,10 @@ const updateDonorProfile = asyncHandler(async (req, res) => {
     if (profession?.trim()) updateData.profession = profession.trim();
     if (weight) updateData.weight = parseFloat(weight);
     if (height) updateData.height = parseFloat(height);
+    if (bloodGroup?.trim()) updateData.bloodGroup = bloodGroup.trim();
+    if (gender?.trim()) updateData.gender = gender.trim();
+    if (religion?.trim()) updateData.religion = religion.trim();
+    if (dateOfBirth) updateData.dateOfBirth = dateOfBirth;
     if (emergencyContact) updateData.emergencyContact = emergencyContact;
     if (privacySettings) updateData.privacySettings = privacySettings;
 
