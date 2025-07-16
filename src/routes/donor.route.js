@@ -2,6 +2,10 @@ import { Router } from "express";
 import { upload } from "../middlewares/multer.middleware.js";
 import { verifyAdmin, verifyJWT } from "../middlewares/auth.middleware.js";
 import {
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
+
     addDonor,
     deleteDonor,
     getDonorDetails,

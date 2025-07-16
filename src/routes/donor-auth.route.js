@@ -13,6 +13,10 @@ import {
 } from "../controllers/donor.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import {
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
+
     verifyDonorJWT,
     verifyDonorAccount,
 } from "../middlewares/donor.middleware.js";
