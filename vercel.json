@@ -14,10 +14,5 @@
             "src": "/(.*)",
             "dest": "src/index.js"
         }
-    ],
-    "functions": {
-        "src/index.js": {
-            "maxDuration": 30
-        }
-    }
+    ]
 }
