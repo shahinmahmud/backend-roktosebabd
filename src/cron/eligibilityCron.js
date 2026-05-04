@@ -13,8 +13,6 @@ const __dirname = path.dirname(__filename);
 const envPath = path.resolve(__dirname, "../../.env");
 dotenv.config({ path: envPath });
 
-connectDB();
-
 // This function will be called daily at 2:00 AM
 cron.schedule("0 2 * * *", async () => {
     console.log("[CRON] Starting daily donor eligibility update...");

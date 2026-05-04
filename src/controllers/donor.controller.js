@@ -540,7 +540,7 @@ const addDonor = asyncHandler(async (req, res) => {
     const createDonorPayload = {
         ...req.body,
         profilePhoto,
-        password: "defaultPassword123", // Admin added donors get default password
+        password: "Password123", // Admin added donors get default password
         accountStatus: "ACTIVE", // Admin approved
         eligibilityStatus: "ELIGIBLE",
     };
