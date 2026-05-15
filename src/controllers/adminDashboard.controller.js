@@ -1,10 +1,6 @@
 // src/controllers/adminDashboard.controller.js
 import { Donor } from "../models/donor.model.js";
 import { User } from "../models/user.model.js";
-import { createRequire } from 'module';
-
-const require = createRequire(import.meta.url);
-
 // import { EmergencyRequest } from "../models/emergencyRequest.model.js"; // Uncomment if/when model exists
 // import { Activity } from "../models/activity.model.js"; // Uncomment if/when model exists
 

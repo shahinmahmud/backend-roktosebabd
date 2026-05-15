@@ -13,9 +13,6 @@ import {
 } from "../controllers/user.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { verifyAdmin, verifyJWT } from "../middlewares/auth.middleware.js";
-import { createRequire } from 'module';
-
-const require = createRequire(import.meta.url);
 
 const router = Router();
 
