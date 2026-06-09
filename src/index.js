@@ -5,7 +5,7 @@ import connectDB from "./db/index.js";
 import { app } from "./app.js";
 
 // Local development only
-if (process.env.NODE_ENV !== "production") {
+if (!process.env.VERCEL) {
     connectDB()
         .then(() => {
             app.listen(process.env.PORT || 8000, () => {
