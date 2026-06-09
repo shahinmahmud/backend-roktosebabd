@@ -4,7 +4,7 @@ dotenv.config({ path: "./.env" });
 import connectDB from "./db/index.js";
 import { app } from "./app.js";
 
-// For local development
+// Local development only
 if (process.env.NODE_ENV !== "production") {
     connectDB()
         .then(() => {
@@ -19,8 +19,15 @@ if (process.env.NODE_ENV !== "production") {
         });
 }
 
-// Connect to DB for serverless (Vercel)
-connectDB().catch((err) => console.log("MONGO db connection failed !!! ", err));
-
-// Vercel needs this export
-export default app;
+// For Vercel serverless, just export app directly
+export default async function handler(req, res) {
+    try {
+        // DB connect once per invocation
+        await connectDB();
+        // Pass request to Express
+        return app(req, res);
+    } catch (err) {
+        console.error("MONGO db connection failed !!! ", err);
+        res.status(500).send("Internal Server Error");
+    }
+}
