@@ -6,8 +6,12 @@
     "main": "index.js",
     "scripts": {
         "start": "node src/index.js",
-        "dev": "nodemon -r dotenv/config --experimental-json-modules --inspect src/index.js"
+        "dev": "nodemon -r dotenv/config --experimental-json-modules --inspect src/index.js",
+        "postinstall": "npm rebuild sharp --force"
     },
+    "engines": {
+    "node": "18.x"
+  },
     "keywords": [
         "javascript",
         "backend",
