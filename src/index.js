@@ -3,10 +3,7 @@ dotenv.config({ path: "./.env" });
 
 import connectDB from "./db/index.js";
 import { app } from "./app.js";
-import { createRequire } from 'module';
 
-var require = createRequire(import.meta.url);
-var module = { exports: {} };
 
 // Local development only
 if (!process.env.VERCEL) {
